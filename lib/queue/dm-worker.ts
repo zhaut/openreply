@@ -695,6 +695,7 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
           text: promptText,
           buttonTitle: automation.followPromptButtonLabel || "i'm following",
           payload: `followcheck:${automation.id}`,
+          profileUrl: `https://www.instagram.com/${automation.instagramAccount.username}/`,
           postId: mediaId,
         });
       } else if (automation.trackedLinks.length > 0) {
@@ -1069,6 +1070,7 @@ async function processPostback(job: Job<ProcessPostbackJob>): Promise<void> {
               buttonTitle:
                 automation.followPromptButtonLabel || "i'm following",
               payload: `followcheck:${automation.id}`,
+              profileUrl: `https://www.instagram.com/${automation.instagramAccount.username}/`,
             }),
         });
       } catch (error) {
@@ -1452,6 +1454,7 @@ async function processMessage(job: Job<ProcessMessageJob>): Promise<void> {
           text: promptText,
           buttonTitle: automation.followPromptButtonLabel || "I'm following ✅",
           payload: `followcheck:${automation.id}`,
+          profileUrl: `https://www.instagram.com/${automation.instagramAccount.username}/`,
         });
       } else {
         await sendRevealDirectMessage({

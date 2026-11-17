@@ -67,6 +67,48 @@ async function sendZernioMessage({
   };
 }
 
+const PROFILE_BUTTON_TITLE = "Ver perfil";
+
+// Follow prompts: a "view profile" URL button next to the follow-check button.
+// If the provider rejects the mixed buttons (4xx), fall back to the plain
+// follow-check button so the campaign keeps working.
+async function sendZernioFollowPrompt({
+  context,
+  recipientId,
+  commentId,
+  postId,
+  text,
+  buttonTitle,
+  payload,
+  profileUrl,
+}: {
+  context: ZernioContext;
+  recipientId?: string;
+  commentId?: string;
+  postId?: string;
+  text: string;
+  buttonTitle: string;
+  payload: string;
+  profileUrl?: string;
+}) {
+  const postback: Button = { type: "postback", title: buttonTitle.slice(0, 20), payload };
+  if (profileUrl) {
+    try {
+      return await sendZernioMessage({
+        context,
+        recipientId,
+        commentId,
+        postId,
+        text,
+        buttons: [{ type: "url", title: PROFILE_BUTTON_TITLE, url: profileUrl }, postback],
+      });
+    } catch (error) {
+      if (!(error instanceof ZernioApiError) || error.code >= 500) throw error;
+    }
+  }
+  return sendZernioMessage({ context, recipientId, commentId, postId, text, buttons: [postback] });
+}
+
 function linkButtons(buttons: meta.LinkButton[]): Button[] {
   return buttons
     .slice(0, 3)
@@ -104,6 +146,7 @@ export async function sendPrivateReplyWithButton({
   buttonTitle,
   payload,
   postId,
+  profileUrl,
 }: {
   context: InstagramContext;
   instagramAccountId: string;
@@ -112,6 +155,7 @@ export async function sendPrivateReplyWithButton({
   buttonTitle: string;
   payload: string;
   postId?: string;
+  profileUrl?: string;
 }) {
   if (context.provider === "META")
     return meta.sendPrivateReplyWithButton(
@@ -122,13 +166,7 @@ export async function sendPrivateReplyWithButton({
       buttonTitle,
       payload
     );
-  return sendZernioMessage({
-    context,
-    commentId,
-    postId,
-    text: text,
-    buttons: [{ type: "postback", title: buttonTitle.slice(0, 20), payload }],
-  });
+  return sendZernioFollowPrompt({ context, commentId, postId, text, buttonTitle, payload, profileUrl });
 }
 
 export async function sendDirectMessageWithButton({
@@ -138,6 +176,7 @@ export async function sendDirectMessageWithButton({
   text,
   buttonTitle,
   payload,
+  profileUrl,
 }: {
   context: InstagramContext;
   instagramAccountId: string;
@@ -145,6 +184,7 @@ export async function sendDirectMessageWithButton({
   text: string;
   buttonTitle: string;
   payload: string;
+  profileUrl?: string;
 }) {
   if (context.provider === "META")
     return meta.sendDirectMessageWithButton(
@@ -155,12 +195,7 @@ export async function sendDirectMessageWithButton({
       buttonTitle,
       payload
     );
-  return sendZernioMessage({
-    context,
-    recipientId: userId,
-    text: text,
-    buttons: [{ type: "postback", title: buttonTitle.slice(0, 20), payload }],
-  });
+  return sendZernioFollowPrompt({ context, recipientId: userId, text, buttonTitle, payload, profileUrl });
 }
 
 export async function sendPrivateReplyWithLinkButton({
